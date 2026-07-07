@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Signal — Autonomous Social Media Content Studio</title>
+<meta name="description" content="Signal orchestrates six autonomous AI agents to research, write, tag, review, score, and schedule your social media content." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ============ TOP NAV ============ -->
+<nav class="topnav" id="topnav">
+  <div class="topnav-inner">
+    <button class="brand" data-nav="landing" aria-label="Signal home">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M3 12h3l2-7 4 14 3-10 2 5h4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="brand-name">Signal</span>
+    </button>
+
+    <div class="nav-links" id="marketingLinks">
+      <a href="#features">Features</a>
+      <a href="#workflow">How it works</a>
+      <a href="#demo">Demo</a>
+      <a href="#testimonials">Testimonials</a>
+    </div>
+
+    <div class="nav-links app-links hidden" id="appLinks">
+      <button data-nav="dashboard" class="app-link">Dashboard</button>
+      <button data-nav="generator" class="app-link">Generator</button>
+      <button data-nav="agents" class="app-link">Agent Monitor</button>
+      <button data-nav="calendar" class="app-link">Calendar</button>
+    </div>
+
+    <button class="btn btn-primary btn-small" data-nav="dashboard" id="launchBtn">Launch app</button>
+
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ============ LANDING PAGE ============ -->
+<main id="page-landing" class="page">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg" aria-hidden="true"></div>
+    <div class="hero-inner">
+      <div class="eyebrow">Six agents. One pipeline. Zero manual work.</div>
+      <h1 class="hero-title">Create, Optimize, and Schedule Social Media Content with Autonomous AI</h1>
+      <p class="hero-sub">Let specialized AI agents research trends, generate engaging posts, optimize hashtags, predict engagement, and schedule content automatically.</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" data-nav="dashboard">Launch app <span aria-hidden="true">→</span></button>
+        <button class="btn btn-ghost" data-nav="agents">Watch agents work</button>
+      </div>
+
+      <!-- SIGNATURE: live pipeline visualization -->
+      <div class="pipeline-hero" id="pipelineHero">
+        <svg viewBox="0 0 980 160" class="pipeline-svg" aria-hidden="true">
+          <line x1="70" y1="80" x2="910" y2="80" class="pipeline-track" />
+          <line x1="70" y1="80" x2="910" y2="80" class="pipeline-progress" id="pipelineProgress" />
+          <g id="pipelineNodes"></g>
+        </svg>
+        <div class="pipeline-labels" id="pipelineLabels"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="section" id="features">
+    <div class="section-head">
+      <span class="eyebrow">Features</span>
+      <h2>Everything a content team does, run by agents</h2>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">📡</div>
+        <h3>Trend research</h3>
+        <p>Surfaces what's rising in your niche right now, scored by relevance so you never guess at topics.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">✍️</div>
+        <h3>Content generation</h3>
+        <p>Platform-native posts with hooks and calls-to-action, tuned to your tone and audience.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">#️⃣</div>
+        <h3>Hashtag optimization</h3>
+        <p>Blends trending and niche tags so posts are found by the people who care.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">✅</div>
+        <h3>Quality review</h3>
+        <p>Checks grammar, tone consistency, and readability before anything ships.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📈</div>
+        <h3>Engagement prediction</h3>
+        <p>Scores reach, engagement, and virality potential with plain-language reasoning.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🗓️</div>
+        <h3>Smart scheduling</h3>
+        <p>Recommends the best send time and drops it straight onto your calendar.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- WORKFLOW -->
+  <section class="section section-alt" id="workflow">
+    <div class="section-head">
+      <span class="eyebrow">How it works</span>
+      <h2>One prompt in. A scheduled, scored post out.</h2>
+      <p class="section-sub">Each agent has one job and hands its output to the next — nothing moves forward until the previous stage is done.</p>
+    </div>
+    <div class="workflow-chain" id="workflowChain"></div>
+  </section>
+
+  <!-- BENEFITS -->
+  <section class="section" id="benefits">
+    <div class="section-head">
+      <span class="eyebrow">Why teams switch</span>
+      <h2>Built for people who post, not people who code</h2>
+    </div>
+    <div class="benefits-grid">
+      <div class="benefit-row">
+        <div class="benefit-num">01</div>
+        <div><h4>Hours back every week</h4><p>What used to take a content calendar meeting now takes one prompt and a coffee.</p></div>
+      </div>
+      <div class="benefit-row">
+        <div class="benefit-num">02</div>
+        <div><h4>Consistency without a full team</h4><p>Solo founders and small teams post like they have an in-house agency.</p></div>
+      </div>
+      <div class="benefit-row">
+        <div class="benefit-num">03</div>
+        <div><h4>Data before you publish</h4><p>See a predicted engagement score and the reasoning behind it before a post ever goes live.</p></div>
+      </div>
+      <div class="benefit-row">
+        <div class="benefit-num">04</div>
+        <div><h4>Every platform, one voice</h4><p>LinkedIn, Instagram, and X each get content shaped for how people actually read there.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEMO PREVIEW -->
+  <section class="section section-alt" id="demo">
+    <div class="section-head">
+      <span class="eyebrow">Demo preview</span>
+      <h2>See a real generation, start to finish</h2>
+    </div>
+    <div class="demo-preview">
+      <div class="demo-window">
+        <div class="demo-topbar"><span></span><span></span><span></span></div>
+        <div class="demo-body">
+          <div class="demo-line"><span class="tag tag-cyan">LinkedIn</span><span class="tag">Professional</span></div>
+          <p class="demo-text">"Most teams don't have a content problem. They have a consistency problem. Here's how three specialized AI agents fixed ours in one afternoon…"</p>
+          <div class="demo-tags">#ContentStrategy #B2BMarketing #AIagents</div>
+          <div class="demo-meta">
+            <div><span class="demo-score">87</span><small>Engagement score</small></div>
+            <div><span class="demo-time">Tue · 10:30 AM</span><small>Recommended slot</small></div>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary" data-nav="generator">Try the generator →</button>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section class="section" id="testimonials">
+    <div class="section-head">
+      <span class="eyebrow">Testimonials</span>
+      <h2>Trusted by builders who'd rather be building</h2>
+    </div>
+    <div class="testimonial-grid" id="testimonialGrid"></div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M3 12h3l2-7 4 14 3-10 2 5h4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span>Signal</span>
+      </div>
+      <p class="footer-copy">Autonomous content operations, built as a college Generative AI systems project. All AI output on this build is simulated for demonstration.</p>
+      <div class="footer-links">
+        <a href="#features">Features</a>
+        <a href="#workflow">Workflow</a>
+        <a href="#demo">Demo</a>
+      </div>
+    </div>
+  </footer>
+</main>
+
+<!-- ============ APP SHELL (dashboard / generator / agents / calendar) ============ -->
+<div id="appShell" class="app-shell hidden">
+  <aside class="sidebar">
+    <button class="brand" data-nav="landing" style="margin-bottom:2rem;">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M3 12h3l2-7 4 14 3-10 2 5h4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="brand-name">Signal</span>
+    </button>
+    <button class="side-link active" data-nav="dashboard" data-icon="grid">Dashboard</button>
+    <button class="side-link" data-nav="generator" data-icon="pen">Content Generator</button>
+    <button class="side-link" data-nav="agents" data-icon="cpu">Agent Monitor</button>
+    <button class="side-link" data-nav="calendar" data-icon="calendar">Content Calendar</button>
+    <div class="sidebar-footer">
+      <button class="side-link" data-nav="landing">← Back to site</button>
+    </div>
+  </aside>
+
+  <div class="app-content">
+
+    <!-- DASHBOARD -->
+    <section id="page-dashboard" class="app-page">
+      <header class="page-header">
+        <div><h1>Dashboard</h1><p>Your content operation, at a glance.</p></div>
+      </header>
+
+      <div class="stat-grid" id="statGrid"></div>
+
+      <div class="dash-grid">
+        <div class="panel">
+          <h3>Engagement score trend</h3>
+          <canvas id="engagementChart" height="180"></canvas>
+        </div>
+        <div class="panel">
+          <h3>Posts by platform</h3>
+          <canvas id="platformChart" height="180"></canvas>
+        </div>
+      </div>
+
+      <div class="dash-grid dash-grid-2">
+        <div class="panel">
+          <h3>Trending topics</h3>
+          <div class="mini-list" id="trendingList"></div>
+        </div>
+        <div class="panel">
+          <h3>Agent activity</h3>
+          <div class="mini-list" id="agentActivityList"></div>
+        </div>
+        <div class="panel">
+          <h3>Upcoming content</h3>
+          <div class="mini-list" id="upcomingList"></div>
+        </div>
+      </div>
+
+      <div class="page-header" style="margin-top:2.5rem;">
+        <div><h2 style="margin:0;">Campaign overview</h2><p>Results from the most recent autonomous 7-day campaign run.</p></div>
+      </div>
+      <div class="stat-grid" id="campaignStatGrid"></div>
+
+      <div class="dash-grid dash-grid-2">
+        <div class="panel">
+          <h3>📡 Trend Research Agent — top 5 topics</h3>
+          <div class="mini-list" id="dashTrendPanel"></div>
+        </div>
+        <div class="panel">
+          <h3>⚙️ Content pipeline status</h3>
+          <div class="mini-list" id="pipelineStatusList"></div>
+        </div>
+        <div class="panel">
+          <h3>🧭 Weekly content plan</h3>
+          <div class="mini-list" id="weeklyPlanList"></div>
+        </div>
+      </div>
+
+      <div class="dash-grid">
+        <div class="panel">
+          <h3>🗓️ Weekly content calendar (from latest campaign)</h3>
+          <div class="mini-list" id="weeklyCalendarPreview"></div>
+        </div>
+        <div class="panel">
+          <h3>Campaign engagement by day</h3>
+          <canvas id="campaignEngagementChart" height="180"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTENT GENERATOR -->
+    <section id="page-generator" class="app-page hidden">
+      <header class="page-header">
+        <div><h1>Content Generator</h1><p>Describe your brief. The agent pipeline handles the rest.</p></div>
+      </header>
+
+      <div class="generator-grid">
+        <form class="panel form-panel" id="generatorForm">
+          <label>Business niche
+            <input type="text" id="inputNiche" placeholder="e.g. Sustainable skincare brand" required />
+          </label>
+          <label>Target audience
+            <input type="text" id="inputAudience" placeholder="e.g. Eco-conscious women, 25–40" required />
+          </label>
+          <label>Platform
+            <select id="inputPlatform">
+              <option value="LinkedIn">LinkedIn</option>
+              <option value="Instagram">Instagram</option>
+              <option value="X/Twitter">X / Twitter</option>
+            </select>
+          </label>
+          <label>Tone
+            <select id="inputTone">
+              <option value="Professional">Professional</option>
+              <option value="Casual">Casual</option>
+              <option value="Educational">Educational</option>
+              <option value="Promotional">Promotional</option>
+            </select>
+          </label>
+          <button type="submit" class="btn btn-primary" id="generateBtn">Generate content</button>
+          <div class="pipeline-mini" id="pipelineMini"></div>
+        </form>
+
+        <div class="panel result-panel" id="resultPanel">
+          <div class="empty-state">
+            <div class="empty-icon">✨</div>
+            <p>Fill in the brief and run the pipeline to see your generated post, hashtags, schedule, and score here.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AGENT MONITOR -->
+    <section id="page-agents" class="app-page hidden">
+      <header class="page-header">
+        <div><h1>Agent Monitor</h1><p>Live status of every agent in the autonomous pipeline.</p></div>
+        <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+          <button class="btn btn-secondary btn-small" id="runPipelineBtn">Run pipeline (1 post)</button>
+          <button class="btn btn-primary btn-small" id="runCampaignBtn">🚀 Run Autonomous Campaign</button>
+        </div>
+      </header>
+
+      <div class="pipeline-hero pipeline-hero-mono">
+        <svg viewBox="0 0 980 160" class="pipeline-svg" aria-hidden="true">
+          <line x1="70" y1="80" x2="910" y2="80" class="pipeline-track" />
+          <line x1="70" y1="80" x2="910" y2="80" class="pipeline-progress" id="monitorProgress" />
+          <g id="monitorNodes"></g>
+        </svg>
+      </div>
+
+      <div class="agent-grid" id="agentGrid"></div>
+
+      <!-- Populated after "Run Autonomous Campaign" completes -->
+      <div id="campaignSection" class="hidden">
+        <div class="page-header" style="margin-top:2.5rem;">
+          <div><h2 style="margin:0;">📡 Trend research → 🧭 weekly plan</h2><p>What the Research and Planning agents produced before any content was written.</p></div>
+        </div>
+        <div class="dash-grid dash-grid-2">
+          <div class="panel">
+            <h3>Top 5 trending topics</h3>
+            <div class="mini-list" id="campaignTrendList"></div>
+          </div>
+          <div class="panel" style="grid-column:span 2;">
+            <h3>7-day content strategy</h3>
+            <div class="mini-list" id="campaignPlanList"></div>
+          </div>
+        </div>
+
+        <div class="page-header" style="margin-top:2rem;">
+          <div><h2 style="margin:0;">7-day campaign output</h2><p>Every day's content, image concept, hashtags, review, prediction, and schedule — produced by the same 8 agents shown above.</p></div>
+        </div>
+        <div id="campaignDaysList"></div>
+      </div>
+    </section>
+
+    <!-- CONTENT CALENDAR -->
+    <section id="page-calendar" class="app-page hidden">
+      <header class="page-header">
+        <div><h1>Content Calendar</h1><p>Drag a draft onto any day to schedule it.</p></div>
+      </header>
+
+      <div class="calendar-layout">
+        <div class="panel drafts-panel">
+          <h3>Drafts</h3>
+          <div id="draftsList" class="drafts-list"></div>
+        </div>
+        <div class="panel calendar-panel">
+          <div class="calendar-toolbar">
+            <span id="calendarMonthLabel"></span>
+            <div class="legend">
+              <span class="legend-dot dot-scheduled"></span> Scheduled
+              <span class="legend-dot dot-draft"></span> Draft
+              <span class="legend-dot dot-upcoming"></span> Upcoming
+            </div>
+          </div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div class="mobile-backdrop" id="mobileBackdrop"></div>
+
+<script src="mockData.js"></script>
+<script src="agents.js"></script>
+<script src="charts.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
