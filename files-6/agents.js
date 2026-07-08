@@ -178,13 +178,13 @@ async function runImageAgent(brief, topicText, writer) {
    guarantee at least 15 hashtags per post.
 ========================================================= */
 async function runHashtagAgent(brief, writer) {
-  const content = writer?.content || writer?.linkedin?.content || "";
+  const postContent = writer?.content || writer?.linkedin?.content || "";
   
   try {
     const response = await fetch('http://localhost:5000/generate_hashtags', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ brief, content })
+      body: JSON.stringify({ brief, content: postContent })
     });
     if (response.ok) {
       const data = await response.json();
@@ -198,7 +198,7 @@ async function runHashtagAgent(brief, writer) {
   }
 
   const trendingPool = TRENDING_HASHTAG_BANK[brief.platform] || TRENDING_HASHTAG_BANK.LinkedIn;
-  const draftText = content.toLowerCase();
+  const draftText = postContent.toLowerCase();
 
   const mentioned = NICHE_HASHTAG_BANK.filter(tag => draftText.includes(tag.toLowerCase()));
   const unmentionedNiche = NICHE_HASHTAG_BANK.filter(tag => !mentioned.includes(tag));

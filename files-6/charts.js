@@ -6,6 +6,10 @@
  */
 
 function initDashboardCharts() {
+  if (typeof Chart === 'undefined') {
+    console.warn("Chart.js not loaded. Skipping chart initialization.");
+    return;
+  }
   const fontColor = "#94A3B8";
   Chart.defaults.font.family = "'Inter', sans-serif";
   Chart.defaults.color = fontColor;

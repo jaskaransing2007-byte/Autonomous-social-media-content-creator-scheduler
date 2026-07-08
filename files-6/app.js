@@ -321,8 +321,7 @@ function renderDashboard() {
   renderCampaignOverview();
   renderDashTrendPanel();
   renderPipelineStatusList();
-  renderWeeklyPlanPanel();
-  renderWeeklyCalendarPreview();
+  // Removed undefined function calls that were breaking initialization
   if (typeof renderCampaignChart === "function") {
     renderCampaignChart(lastCampaign ? lastCampaign.days : null);
   }
@@ -473,7 +472,7 @@ function renderGeneratorResult(brief, result) {
           ${platforms.map(p => `
             <div class="campaign-platform-block" style="${p.key === primaryKey ? "border-color:var(--accent);" : ""}">
               <h6>${p.label}${p.key === primaryKey ? " · selected platform" : ""}</h6>
-              <p>${writer[p.key].content}</p>
+              <p>${writer && writer[p.key] ? (typeof writer[p.key] === 'string' ? writer[p.key] : writer[p.key].content || 'Missing content') : 'Missing content'}</p>
             </div>
           `).join("")}
         </div>
@@ -481,49 +480,49 @@ function renderGeneratorResult(brief, result) {
 
       <div class="result-block">
         <h4>🖼️ Image Generation Agent</h4>
-        <div class="image-card ${image.imageUrl ? 'has-real-image' : ''}">
-          ${image.imageUrl ? `<img src="${image.imageUrl}" class="real-image-thumb" />` : `<div class="image-thumb" style="background:${image.thumbGradient};">${image.thumbIcon}</div>`}
+        <div class="image-card ${image?.imageUrl ? 'has-real-image' : ''}">
+          ${image?.imageUrl ? `<img src="${image.imageUrl}" class="real-image-thumb" />` : `<div class="image-thumb" style="background:${image?.thumbGradient || '#333'};">${image?.thumbIcon || '🖼️'}</div>`}
           <div class="image-meta">
-            <h5>${image.style}</h5>
-            <p>${image.concept}</p>
-            <div class="image-prompt">${image.prompt}</div>
+            <h5>${image?.style || 'Standard'}</h5>
+            <p>${image?.concept || 'No concept available.'}</p>
+            <div class="image-prompt">${image?.prompt || 'No prompt available.'}</div>
           </div>
         </div>
       </div>
 
       <div class="result-block">
-        <h4>#️⃣ Hashtag Agent (${hashtag.tags.length} tags)</h4>
-        <div class="hashtag-row">${hashtag.tags.map(t => `<span class="tag tag-cyan">${t}</span>`).join("")}</div>
+        <h4>#️⃣ Hashtag Agent (${hashtag?.tags?.length || 0} tags)</h4>
+        <div class="hashtag-row">${(hashtag?.tags || []).map(t => `<span class="tag tag-cyan">${t}</span>`).join("")}</div>
       </div>
 
       <div class="result-block">
         <h4>✅ Quality Review Agent</h4>
         <div class="score-row">
-          <div class="score-box"><div class="score-num">${review.grammar}</div><div class="score-label">Grammar</div></div>
-          <div class="score-box"><div class="score-num">${review.clarity}</div><div class="score-label">Clarity</div></div>
-          <div class="score-box"><div class="score-num">${review.readability}</div><div class="score-label">Readability</div></div>
-          <div class="score-box"><div class="score-num">${review.tone}</div><div class="score-label">Tone</div></div>
-          <div class="score-box"><div class="score-num" style="color:var(--accent)">${review.qualityScore}</div><div class="score-label">Overall</div></div>
+          <div class="score-box"><div class="score-num">${review?.grammar || '-'}</div><div class="score-label">Grammar</div></div>
+          <div class="score-box"><div class="score-num">${review?.clarity || '-'}</div><div class="score-label">Clarity</div></div>
+          <div class="score-box"><div class="score-num">${review?.readability || '-'}</div><div class="score-label">Readability</div></div>
+          <div class="score-box"><div class="score-num">${review?.tone || '-'}</div><div class="score-label">Tone</div></div>
+          <div class="score-box"><div class="score-num" style="color:var(--accent)">${review?.qualityScore || '-'}</div><div class="score-label">Overall</div></div>
         </div>
-        <p style="margin:.75rem 0 0;color:var(--text-dim);font-size:.88rem;">${review.issues.join(" ")}</p>
+        <p style="margin:.75rem 0 0;color:var(--text-dim);font-size:.88rem;">${(review?.issues || []).join(" ")}</p>
       </div>
 
       <div class="result-block">
         <h4>📈 Engagement Prediction Agent</h4>
         <div class="score-row">
-          <div class="score-box"><div class="score-num">${engagement.reach}</div><div class="score-label">Reach</div></div>
-          <div class="score-box"><div class="score-num">${engagement.engagement}</div><div class="score-label">Engagement</div></div>
-          <div class="score-box"><div class="score-num">${engagement.virality}</div><div class="score-label">Virality</div></div>
-          <div class="score-box"><div class="score-num">${engagement.ctr}</div><div class="score-label">CTR</div></div>
-          <div class="score-box"><div class="score-num" style="color:var(--accent)">${engagement.overall}</div><div class="score-label">Overall</div></div>
+          <div class="score-box"><div class="score-num">${engagement?.reach || '-'}</div><div class="score-label">Reach</div></div>
+          <div class="score-box"><div class="score-num">${engagement?.engagement || '-'}</div><div class="score-label">Engagement</div></div>
+          <div class="score-box"><div class="score-num">${engagement?.virality || '-'}</div><div class="score-label">Virality</div></div>
+          <div class="score-box"><div class="score-num">${engagement?.ctr || '-'}</div><div class="score-label">CTR</div></div>
+          <div class="score-box"><div class="score-num" style="color:var(--accent)">${engagement?.overall || '-'}</div><div class="score-label">Overall</div></div>
         </div>
-        <p class="reasoning">${engagement.reasoning}</p>
+        <p class="reasoning">${engagement?.reasoning || 'No reasoning provided.'}</p>
       </div>
 
       <div class="result-block">
         <h4>📅 Scheduler Agent</h4>
-        <div class="demo-time">${scheduler.slot}</div>
-        <p style="margin:.6rem 0 0;color:var(--text-dim);font-size:.85rem;">${scheduler.rationale}</p>
+        <div class="demo-time">${scheduler?.slot || 'TBD'}</div>
+        <p style="margin:.6rem 0 0;color:var(--text-dim);font-size:.85rem;">${scheduler?.rationale || 'No rationale.'}</p>
         <button type="button" class="btn btn-secondary btn-small" id="addToCalendarBtn" style="margin-top:.85rem;">
           🗓️ Add to Content Calendar
         </button>
@@ -534,7 +533,8 @@ function renderGeneratorResult(brief, result) {
   document.getElementById("addToCalendarBtn").addEventListener("click", (e) => {
     const btn = e.currentTarget;
     const day = resolveSlotToDay(scheduler.slot);
-    const firstLine = writer[primaryKey].content.split("\n")[0].slice(0, 60);
+    const rawContent = writer && writer[primaryKey] ? (typeof writer[primaryKey] === 'string' ? writer[primaryKey] : writer[primaryKey].content) : "No content";
+    const firstLine = (rawContent || "No content").split("\n")[0].slice(0, 60);
 
     // Compute actual ISO date for DB persistence
     const today = new Date();
@@ -715,28 +715,28 @@ function renderCampaignDays(days) {
       <p style="margin:0 0 1rem;color:var(--text-dim);font-size:.85rem;">${d.angle} · ${d.scheduler.rationale}</p>
 
       <div class="campaign-platform-grid">
-        <div class="campaign-platform-block"><h6>LinkedIn Post</h6><p>${d.writer.linkedin.content}</p></div>
-        <div class="campaign-platform-block"><h6>Instagram Caption</h6><p>${d.writer.instagram.content}</p></div>
-        <div class="campaign-platform-block"><h6>X / Twitter Post</h6><p>${d.writer.twitter.content}</p></div>
+        <div class="campaign-platform-block"><h6>LinkedIn Post</h6><p>${d.writer?.linkedin ? (typeof d.writer.linkedin === 'string' ? d.writer.linkedin : d.writer.linkedin.content || 'Missing content') : 'Missing content'}</p></div>
+        <div class="campaign-platform-block"><h6>Instagram Caption</h6><p>${d.writer?.instagram ? (typeof d.writer.instagram === 'string' ? d.writer.instagram : d.writer.instagram.content || 'Missing content') : 'Missing content'}</p></div>
+        <div class="campaign-platform-block"><h6>X / Twitter Post</h6><p>${d.writer?.twitter ? (typeof d.writer.twitter === 'string' ? d.writer.twitter : d.writer.twitter.content || 'Missing content') : 'Missing content'}</p></div>
       </div>
 
-      <div class="image-card ${d.image.imageUrl ? 'has-real-image' : ''}" style="margin-bottom:1rem;">
-        ${d.image.imageUrl ? `<img src="${d.image.imageUrl}" class="real-image-thumb" />` : `<div class="image-thumb" style="background:${d.image.thumbGradient};">${d.image.thumbIcon}</div>`}
+      <div class="image-card ${d.image?.imageUrl ? 'has-real-image' : ''}" style="margin-bottom:1rem;">
+        ${d.image?.imageUrl ? `<img src="${d.image.imageUrl}" class="real-image-thumb" />` : `<div class="image-thumb" style="background:${d.image?.thumbGradient || '#333'};">${d.image?.thumbIcon || '🖼️'}</div>`}
         <div class="image-meta">
-          <h5>${d.image.style}</h5>
-          <p>${d.image.concept}</p>
-          <div class="image-prompt">${d.image.prompt}</div>
+          <h5>${d.image?.style || 'Standard'}</h5>
+          <p>${d.image?.concept || 'No concept available.'}</p>
+          <div class="image-prompt">${d.image?.prompt || 'No prompt available.'}</div>
         </div>
       </div>
 
-      <div class="hashtag-row" style="margin-bottom:1rem;">${d.hashtag.tags.map(t => `<span class="tag tag-cyan">${t}</span>`).join("")}</div>
+      <div class="hashtag-row" style="margin-bottom:1rem;">${(d.hashtag?.tags || []).map(t => `<span class="tag tag-cyan">${t}</span>`).join("")}</div>
 
       <div class="score-row" style="margin-bottom:.5rem;">
-        <div class="score-box"><div class="score-num">${d.review.qualityScore}</div><div class="score-label">Quality</div></div>
-        <div class="score-box"><div class="score-num">${d.engagement.reach}</div><div class="score-label">Reach</div></div>
-        <div class="score-box"><div class="score-num">${d.engagement.engagement}</div><div class="score-label">Engagement</div></div>
-        <div class="score-box"><div class="score-num">${d.engagement.virality}</div><div class="score-label">Virality</div></div>
-        <div class="score-box"><div class="score-num">${d.engagement.ctr}</div><div class="score-label">CTR</div></div>
+        <div class="score-box"><div class="score-num">${d.review?.qualityScore || '-'}</div><div class="score-label">Quality</div></div>
+        <div class="score-box"><div class="score-num">${d.engagement?.reach || '-'}</div><div class="score-label">Reach</div></div>
+        <div class="score-box"><div class="score-num">${d.engagement?.engagement || '-'}</div><div class="score-label">Engagement</div></div>
+        <div class="score-box"><div class="score-num">${d.engagement?.virality || '-'}</div><div class="score-label">Virality</div></div>
+        <div class="score-box"><div class="score-num">${d.engagement?.ctr || '-'}</div><div class="score-label">CTR</div></div>
         <div class="score-box"><div class="score-num" style="color:var(--accent)">${d.engagement.overall}</div><div class="score-label">Overall</div></div>
       </div>
     </div>
