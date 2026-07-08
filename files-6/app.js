@@ -51,14 +51,13 @@ function persistState() {
   }
 }
 
-// Running dashboard stats — seeded from the mock DASH_STATS values, then
-// incremented as the user actually generates and schedules content so the
-// dashboard reflects real session activity instead of frozen mock numbers.
+// Running dashboard stats — starts at zero and increments as the user
+// generates and schedules content so the dashboard reflects real activity.
 let appStats = {
-  totalGenerated: DASH_STATS[0].value,
-  totalScheduled: DASH_STATS[1].value,
-  engagementSum: DASH_STATS[2].value,
-  engagementCount: 1,
+  totalGenerated: 0,
+  totalScheduled: 0,
+  engagementSum: 0,
+  engagementCount: 0,
   imagesGenerated: 0,
 };
 
@@ -266,7 +265,7 @@ function renderDashboard() {
       { label: "Total generated posts", value: appStats.totalGenerated, delta: "Live session count", dir: "up" },
       { label: "Scheduled posts", value: appStats.totalScheduled, delta: "Live session count", dir: "up" },
       { label: "Avg. engagement score", value: avgEngagement, delta: `${appStats.engagementCount} post${appStats.engagementCount === 1 ? "" : "s"} counted`, dir: "up" },
-      { label: "Active agents", value: DASH_STATS[3].value, delta: DASH_STATS[3].delta, dir: DASH_STATS[3].dir },
+      { label: "Active agents", value: AGENT_DEFS.length, delta: "All operational", dir: "up" },
     ];
     statGrid.innerHTML = liveStats.map(s => `
       <div class="stat-card">
@@ -289,23 +288,34 @@ function renderDashboard() {
 
   const agentActivityList = document.getElementById("agentActivityList");
   if (agentActivityList) {
-    const entries = agentActivityLog.length ? agentActivityLog : AGENT_ACTIVITY;
-    agentActivityList.innerHTML = entries.map(a => `
-      <div class="mini-item">
-        <div><div class="mi-title">${a.title}</div><div class="mi-sub">${a.sub}</div></div>
-        <span class="pill ${a.pill}">${a.pillText}</span>
-      </div>
-    `).join("");
+    if (agentActivityLog.length) {
+      agentActivityList.innerHTML = agentActivityLog.map(a => `
+        <div class="mini-item">
+          <div><div class="mi-title">${a.title}</div><div class="mi-sub">${a.sub}</div></div>
+          <span class="pill ${a.pill}">${a.pillText}</span>
+        </div>
+      `).join("");
+    } else {
+      agentActivityList.innerHTML = `<p style="font-size:.85rem;color:var(--text-dim);margin:1rem 0;">No recent agent activity. Generate a post to see agents work in real-time.</p>`;
+    }
   }
 
   const upcomingList = document.getElementById("upcomingList");
   if (upcomingList) {
-    upcomingList.innerHTML = UPCOMING_CONTENT.map(u => `
-      <div class="mini-item">
-        <div><div class="mi-title">${u.title}</div><div class="mi-sub">${u.sub}</div></div>
-        <span class="pill ${u.pill}">${u.pillText}</span>
-      </div>
-    `).join("");
+    const scheduled = calendarEvents.filter(e => e.status === "scheduled").slice(0, 5); // top 5
+    if (scheduled.length) {
+      upcomingList.innerHTML = scheduled.map(u => `
+        <div class="mini-item">
+          <div>
+            <div class="mi-title">${(u.title || "Scheduled Post").slice(0,35)}${(u.title||"").length>35?"…":""}</div>
+            <div class="mi-sub">${u.platform} · ${u.slot ? u.slot.split(" · ")[1] || "" : ""}</div>
+          </div>
+          <span class="pill pill-cyan">Scheduled</span>
+        </div>
+      `).join("");
+    } else {
+      upcomingList.innerHTML = `<p style="font-size:.85rem;color:var(--text-dim);margin:1rem 0;">No upcoming scheduled posts. Add some from the calendar!</p>`;
+    }
   }
 
   renderCampaignOverview();
@@ -485,8 +495,8 @@ function renderGeneratorResult(brief, result) {
 
       <div class="result-block">
         <h4>🖼️ Image Generation Agent</h4>
-        <div class="image-card">
-          <div class="image-thumb" style="background:${image.thumbGradient};">${image.thumbIcon}</div>
+        <div class="image-card ${image.imageUrl ? 'has-real-image' : ''}">
+          ${image.imageUrl ? `<img src="${image.imageUrl}" class="real-image-thumb" />` : `<div class="image-thumb" style="background:${image.thumbGradient};">${image.thumbIcon}</div>`}
           <div class="image-meta">
             <h5>${image.style}</h5>
             <p>${image.concept}</p>
@@ -540,6 +550,11 @@ function renderGeneratorResult(brief, result) {
     const day = resolveSlotToDay(scheduler.slot);
     const firstLine = writer[primaryKey].content.split("\n")[0].slice(0, 60);
 
+    // Compute actual ISO date for DB persistence
+    const today = new Date();
+    const scheduledDate = new Date(today.getFullYear(), today.getMonth(), day);
+    const isoDate = scheduledDate.toISOString().split("T")[0]; // "YYYY-MM-DD"
+
     calendarEvents.push({
       day,
       title: firstLine,
@@ -547,6 +562,19 @@ function renderGeneratorResult(brief, result) {
       status: "scheduled",
       fromGenerator: true,
     });
+
+    // Also notify backend with exact date
+    fetch('http://localhost:5000/schedule', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        time: scheduler.slot,
+        platform: brief.platform,
+        topic: firstLine,
+        post_id: writer.id || 0,
+        scheduled_date: isoDate
+      })
+    }).catch(e => console.warn("Backend /schedule unreachable", e));
 
     appStats.totalScheduled += 1;
     persistState();
@@ -568,6 +596,7 @@ function bindGeneratorForm() {
       audience: document.getElementById("inputAudience").value.trim() || "your audience",
       platform: document.getElementById("inputPlatform").value,
       tone: document.getElementById("inputTone").value,
+      type: document.getElementById("inputType").value,
     };
     const btn = document.getElementById("generateBtn");
     btn.disabled = true;
@@ -716,8 +745,8 @@ function renderCampaignDays(days) {
         <div class="campaign-platform-block"><h6>X / Twitter Post</h6><p>${d.writer.twitter.content}</p></div>
       </div>
 
-      <div class="image-card" style="margin-bottom:1rem;">
-        <div class="image-thumb" style="background:${d.image.thumbGradient};">${d.image.thumbIcon}</div>
+      <div class="image-card ${d.image.imageUrl ? 'has-real-image' : ''}" style="margin-bottom:1rem;">
+        ${d.image.imageUrl ? `<img src="${d.image.imageUrl}" class="real-image-thumb" />` : `<div class="image-thumb" style="background:${d.image.thumbGradient};">${d.image.thumbIcon}</div>`}
         <div class="image-meta">
           <h5>${d.image.style}</h5>
           <p>${d.image.concept}</p>
@@ -761,6 +790,7 @@ function bindRunCampaignButton() {
       audience: document.getElementById("inputAudience")?.value.trim() || "eco-conscious shoppers",
       platform: document.getElementById("inputPlatform")?.value || "Instagram",
       tone: document.getElementById("inputTone")?.value || "Casual",
+      type: document.getElementById("inputType")?.value || "General Content",
     };
 
     const order = AGENT_DEFS.map(a => a.id);
@@ -779,13 +809,33 @@ function bindRunCampaignButton() {
     // Schedule every day's post onto the Content Calendar automatically —
     // this is what makes the Scheduler Agent's output more than just text.
     campaign.days.forEach(d => {
+      const dayOfMonth = resolveWeekdayToDay(d.dayName);
+      
+      // Compute actual ISO date for DB persistence
+      const today = new Date();
+      const scheduledDate = new Date(today.getFullYear(), today.getMonth(), dayOfMonth);
+      const isoDate = scheduledDate.toISOString().split("T")[0];
+
       calendarEvents.push({
-        day: resolveWeekdayToDay(d.dayName),
+        day: dayOfMonth,
         title: `${d.topic}`,
         platform: brief.platform,
         status: "scheduled",
         fromCampaign: true,
       });
+
+      // Also notify backend with exact date
+      fetch('http://localhost:5000/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          time: d.scheduler.slot,
+          platform: brief.platform,
+          topic: d.topic,
+          post_id: 0,
+          scheduled_date: isoDate
+        })
+      }).catch(e => console.warn("Backend /schedule unreachable", e));
     });
 
     lastResearch = campaign.research;
@@ -821,7 +871,7 @@ let calendarEvents = [];
 function renderDrafts() {
   const el = document.getElementById("draftsList");
   if (!el) return;
-  const remaining = CALENDAR_SEED_DRAFTS.filter(d => !calendarEvents.some(e => e.fromDraftId === d.id));
+  const remaining = generatedDrafts.filter(d => !scheduledDraftIds.has(d.id));
   el.innerHTML = remaining.map(d => `
     <div class="draft-card" draggable="true" data-draft-id="${d.id}">
       <div class="draft-platform">${d.platform}</div>
@@ -856,10 +906,15 @@ function renderCalendarGrid() {
 
   for (let day = 1; day <= daysInMonth; day++) {
     const eventsForDay = calendarEvents.filter(e => e.day === day);
+    const isToday = day === today.getDate();
     html += `
-      <div class="cal-day" data-day="${day}">
+      <div class="cal-day${isToday ? ' today' : ''}" data-day="${day}">
         <div class="cal-date">${day}</div>
-        ${eventsForDay.map(e => `<div class="cal-event ${e.status}">${e.title}</div>`).join("")}
+        ${eventsForDay.map(e => {
+          const timeStr = e.slot ? e.slot.split(" · ")[1] || "" : "";
+          const label = (e.title || "Scheduled Post").slice(0, 25);
+          return `<div class="cal-event ${e.status}" title="${(e.title || '').replace(/"/g, '&quot;')}">${timeStr ? timeStr + " · " : ""}${label}</div>`;
+        }).join("")}
       </div>
     `;
   }
@@ -874,17 +929,41 @@ function renderCalendarGrid() {
     dayEl.addEventListener("drop", (e) => {
       e.preventDefault();
       dayEl.classList.remove("drag-over");
-      const draftId = e.dataTransfer.getData("text/plain");
-      const draft = CALENDAR_SEED_DRAFTS.find(d => d.id === draftId);
+      const draftIdStr = e.dataTransfer.getData("text/plain");
+      const draftId = Number(draftIdStr) || draftIdStr;
+      const draft = generatedDrafts.find(d => d.id === draftId);
       if (!draft) return;
+      
+      const dayNum = Number(dayEl.dataset.day);
+      const today = new Date();
+      // Format dummy time string based on dropped day
+      const targetDate = new Date(today.getFullYear(), today.getMonth(), dayNum);
+      const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const slotStr = `${days[targetDate.getDay()]} · 12:00 PM`;
+
       calendarEvents.push({
-        day: Number(dayEl.dataset.day),
+        day: dayNum,
         title: draft.title,
         platform: draft.platform,
         status: "scheduled",
         fromDraftId: draft.id,
       });
       scheduledDraftIds.add(draft.id);
+      
+      // Notify backend with exact date
+      const isoDate = targetDate.toISOString().split("T")[0];
+      fetch('http://localhost:5000/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          time: slotStr,
+          platform: draft.platform,
+          topic: draft.title,
+          post_id: draft.id,
+          scheduled_date: isoDate
+        })
+      }).catch(e => console.warn("Backend /schedule unreachable", e));
+
       appStats.totalScheduled += 1;
       persistState();
       renderCalendarGrid();
@@ -894,22 +973,86 @@ function renderCalendarGrid() {
   });
 }
 
-function initCalendar() {
+async function initCalendar() {
   const saved = loadPersistedState();
   if (saved) {
-    calendarEvents = saved.calendarEvents || CALENDAR_SEED_EVENTS.map(e => ({ ...e }));
-    scheduledDraftIds = new Set(saved.scheduledDraftIds || []);
-    generatedDrafts = saved.generatedDrafts || [];
     if (saved.appStats) appStats = { imagesGenerated: 0, ...saved.appStats };
     if (saved.agentStatusMap) agentStatusMap = saved.agentStatusMap;
     if (saved.agentActivityLog) agentActivityLog = saved.agentActivityLog;
     if (saved.lastResearch) lastResearch = saved.lastResearch;
     if (saved.lastCampaign) lastCampaign = saved.lastCampaign;
-  } else {
-    calendarEvents = CALENDAR_SEED_EVENTS.map(e => ({ ...e }));
-    // Seed events came pre-scheduled, so mark any matching seed drafts used.
-    scheduledDraftIds = new Set();
   }
+  
+  try {
+    const res = await fetch('http://localhost:5000/posts');
+    if (res.ok) {
+      const db = await res.json();
+      
+      // Parse drafts — content is stored as a JSON string of the variants object
+      generatedDrafts = db.drafts.map(d => {
+        let title = d.topic || "Untitled";
+        try {
+          if (d.content) {
+            const parsed = JSON.parse(d.content);
+            // Pick the first platform variant's content first line
+            const firstVariant = parsed.linkedin || parsed.instagram || parsed.twitter;
+            if (firstVariant && firstVariant.content) {
+              title = firstVariant.content.split("\n")[0].slice(0, 60);
+            }
+          }
+        } catch(e) {
+          // content wasn't JSON, use it directly
+          if (d.content) title = d.content.split("\n")[0].slice(0, 60);
+        }
+        return { id: d.id, title, platform: d.platform, status: d.status };
+      });
+      
+      scheduledDraftIds = new Set(db.scheduled.map(s => s.post_id));
+      
+      // Map scheduled posts — use the stored scheduled_date for exact day placement
+      const today = new Date();
+      const currentMonth = today.getMonth();
+      const currentYear = today.getFullYear();
+      
+      calendarEvents = db.scheduled
+        .map(s => {
+          let day = null;
+          // If we have a stored ISO date, extract the day-of-month
+          if (s.scheduled_date) {
+            const d = new Date(s.scheduled_date + "T00:00:00");
+            if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+              day = d.getDate();
+            }
+          }
+          // Fallback: use resolveSlotToDay if no date stored (legacy entries)
+          if (day === null && s.time) {
+            day = resolveSlotToDay(s.time);
+          }
+          if (day === null) return null;
+          
+          return {
+            id: s.id,
+            day,
+            title: s.topic || "Scheduled Post",
+            platform: s.platform,
+            status: "scheduled",
+            fromDraftId: s.post_id,
+            slot: s.time
+          };
+        })
+        .filter(e => e !== null);
+    } else {
+      calendarEvents = [];
+      scheduledDraftIds = new Set();
+      generatedDrafts = [];
+    }
+  } catch(e) {
+    console.error("Failed to load posts from DB", e);
+    calendarEvents = [];
+    scheduledDraftIds = new Set();
+    generatedDrafts = [];
+  }
+
   renderDrafts();
   renderCalendarGrid();
 }

@@ -299,6 +299,15 @@
           <label>Target audience
             <input type="text" id="inputAudience" placeholder="e.g. Eco-conscious women, 25–40" required />
           </label>
+          <label>Service Type
+            <select id="inputType">
+              <option value="Product">Product</option>
+              <option value="Service">Service</option>
+              <option value="Event">Event</option>
+              <option value="Personal Brand">Personal Brand</option>
+              <option value="General Content">General Content</option>
+            </select>
+          </label>
           <label>Platform
             <select id="inputPlatform">
               <option value="LinkedIn">LinkedIn</option>
@@ -373,25 +382,18 @@
     <!-- CONTENT CALENDAR -->
     <section id="page-calendar" class="app-page hidden">
       <header class="page-header">
-        <div><h1>Content Calendar</h1><p>Drag a draft onto any day to schedule it.</p></div>
+        <div><h1>Content Calendar</h1><p>Your scheduled posts appear here automatically.</p></div>
       </header>
 
-      <div class="calendar-layout">
-        <div class="panel drafts-panel">
-          <h3>Drafts</h3>
-          <div id="draftsList" class="drafts-list"></div>
-        </div>
-        <div class="panel calendar-panel">
-          <div class="calendar-toolbar">
-            <span id="calendarMonthLabel"></span>
-            <div class="legend">
-              <span class="legend-dot dot-scheduled"></span> Scheduled
-              <span class="legend-dot dot-draft"></span> Draft
-              <span class="legend-dot dot-upcoming"></span> Upcoming
-            </div>
+      <div class="panel calendar-panel">
+        <div class="calendar-toolbar">
+          <span id="calendarMonthLabel"></span>
+          <div class="legend">
+            <span class="legend-dot dot-scheduled"></span> Scheduled
+            <span class="legend-dot dot-upcoming"></span> Upcoming
           </div>
-          <div class="calendar-grid" id="calendarGrid"></div>
         </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
       </div>
     </section>
 

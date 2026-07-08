@@ -52,18 +52,21 @@ function clamp(n, lo, hi) {
    recommends the single strongest content opportunity.
 ========================================================= */
 async function runResearchAgent(brief) {
-  await wait(500);
-  const topics = [...TRENDING_TOPICS]
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 5)
-    .map(t => ({ ...t, relevance: clamp(t.relevance + Math.floor(Math.random() * 6), 0, 99) }))
+  const baseTopics = [
+    `The future of ${brief.niche}`,
+    `How to choose the best ${brief.type} in ${brief.niche}`,
+    `Top mistakes people make with ${brief.niche}`,
+    `Why ${brief.audience} are loving this ${brief.niche} trend`,
+    `Behind-the-scenes of our ${brief.niche}`
+  ];
+  
+  const topics = baseTopics
+    .map(t => ({ topic: t, relevance: clamp(75 + Math.floor(Math.random() * 24), 0, 99) }))
     .sort((a, b) => b.relevance - a.relevance);
+    
   const recommended = topics[0];
-  return {
-    topics,
-    recommended,
-    summary: `Found ${topics.length} trending angles for "${brief.niche}" — recommending "${recommended.topic}" (${recommended.relevance}% relevance).`,
-  };
+
+  return { topics, recommended, summary: `Identified trending topic: "${recommended.topic}" (${recommended.relevance}% relevance).` };
 }
 
 /* =========================================================
@@ -74,13 +77,29 @@ async function runResearchAgent(brief) {
    informed by research rather than invented independently.
 ========================================================= */
 async function runPlannerAgent(brief, research) {
-  await wait(600);
+  try {
+    const response = await fetch('http://localhost:5000/plan_campaign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brief, topics: research.topics.map(t => t.topic) })
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return {
+        week: data.week,
+        summary: `Built a 7-day content strategy across ${new Set(data.week.map(w => w.topic)).size} distinct topics using AI, opening Monday with "${data.week[0].topic}".`,
+      };
+    }
+  } catch (e) {
+    console.warn("Backend /plan_campaign failed", e);
+  }
+  
   const pool = research.topics.length ? research.topics : TRENDING_TOPICS;
   const week = WEEKLY_DAYS.map((day, i) => {
     const t = pool[i % pool.length];
     return {
       day,
-      topic: t.topic,
+      topic: t.topic || t.title, // Handle both object formats
       relevance: t.relevance,
       angle: WEEKLY_ANGLES[i % WEEKLY_ANGLES.length],
     };
@@ -121,8 +140,38 @@ function craftPlatformVariants(brief, topicText, angle) {
 }
 
 async function runWriterAgent(brief, topicText, angle) {
-  await wait(300);
-  const variants = craftPlatformVariants(brief, topicText, angle);
+  
+  let variants;
+  try {
+    const response = await fetch('http://localhost:5000/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        topic: topicText,
+        angle: angle || '',
+        platform: brief.platform,
+        tone: brief.tone,
+        niche: brief.niche,
+        audience: brief.audience,
+        type: brief.type
+      })
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      variants = data.variants;
+      variants.id = data.id; // Preserve the backend post_id
+    } else {
+      console.warn("Backend /generate returned an error, falling back to local.");
+      variants = craftPlatformVariants(brief, topicText, angle);
+    }
+  } catch (err) {
+    console.warn("Backend /generate unreachable, falling back to local.", err);
+    variants = craftPlatformVariants(brief, topicText, angle);
+  }
+
   return {
     ...variants,
     summary: `Drafted LinkedIn, Instagram, and X/Twitter versions${topicText ? ` around "${topicText}"` : ""}.`,
@@ -136,8 +185,7 @@ async function runWriterAgent(brief, topicText, angle) {
    (a seeded gradient + icon, since no external image-gen API is
    available in this offline build — see README).
 ========================================================= */
-async function runImageAgent(brief, topicText) {
-  await wait(350);
+async function runImageAgent(brief, topicText, writer) {
   const style = pick(IMAGE_STYLES);
   const mood = pick(IMAGE_MOODS);
   const subject = topicText || brief.niche;
@@ -146,12 +194,19 @@ async function runImageAgent(brief, topicText) {
     .replace("{topic_or_niche}", subject.toLowerCase())
     .replace("{mood}", mood);
   const seed = Math.floor(Math.random() * IMAGE_THUMB_GRADIENTS.length);
+
+  const postContent = writer?.linkedin?.content || writer?.content || "";
+  const basePrompt = `A highly detailed, ${style} image with a ${mood} atmosphere. Subject matter: ${postContent.substring(0, 150)}`;
+  const encodedPrompt = encodeURIComponent(basePrompt);
+  const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${seed}`;
+
   return {
     concept: `A ${style.toLowerCase()} representing "${subject}" for ${brief.audience}.`,
-    prompt,
+    prompt: basePrompt,
     style,
     thumbGradient: IMAGE_THUMB_GRADIENTS[seed],
     thumbIcon: IMAGE_THUMB_ICONS[seed],
+    imageUrl: imageUrl,
     summary: `Generated an image concept + prompt in a "${style}" style for "${subject}".`,
   };
 }
@@ -162,9 +217,27 @@ async function runImageAgent(brief, topicText) {
    guarantee at least 15 hashtags per post.
 ========================================================= */
 async function runHashtagAgent(brief, writer) {
-  await wait(250);
+  const content = writer?.content || writer?.linkedin?.content || "";
+  
+  try {
+    const response = await fetch('http://localhost:5000/generate_hashtags', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brief, content })
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return {
+        tags: data.tags,
+        summary: `Generated ${data.tags.length} highly optimized hashtags using AI.`,
+      };
+    }
+  } catch (e) {
+    console.warn("Backend /generate_hashtags failed", e);
+  }
+
   const trendingPool = TRENDING_HASHTAG_BANK[brief.platform] || TRENDING_HASHTAG_BANK.LinkedIn;
-  const draftText = (writer?.content || writer?.linkedin?.content || "").toLowerCase();
+  const draftText = content.toLowerCase();
 
   const mentioned = NICHE_HASHTAG_BANK.filter(tag => draftText.includes(tag.toLowerCase()));
   const unmentionedNiche = NICHE_HASHTAG_BANK.filter(tag => !mentioned.includes(tag));
@@ -172,12 +245,6 @@ async function runHashtagAgent(brief, writer) {
 
   const highPool = [...HIGH_ENGAGEMENT_HASHTAG_BANK].sort(() => Math.random() - 0.5);
 
-  // Priority order: trending, then niche, then high-engagement — but since
-  // the same word can legitimately appear in more than one bank (e.g. a
-  // niche tag that's also currently trending), we dedupe case-insensitively
-  // and backfill from whatever's left until we reach at least 15 unique
-  // tags, guaranteeing the "minimum 15 hashtags" requirement regardless of
-  // overlap between banks.
   const categorized = [
     ...trendingPool.map(t => ({ tag: t, cat: "trending" })),
     ...nichePool.map(t => ({ tag: t, cat: "niche" })),
@@ -207,15 +274,33 @@ async function runHashtagAgent(brief, writer) {
    Scores grammar, clarity, readability, and tone consistency.
 ========================================================= */
 async function runReviewAgent(draft) {
-  await wait(300);
   const content = draft.content || draft.linkedin?.content || "";
+  
+  try {
+    const response = await fetch('http://localhost:5000/review_content', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content })
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return {
+        ...data.review,
+        summary: `AI Review: Quality score ${data.review.qualityScore}/100 (grammar ${data.review.grammar}, readability ${data.review.readability}).`,
+      };
+    }
+  } catch (e) {
+    console.warn("Backend /review_content failed", e);
+  }
+
+  await wait(300);
   const wordCount = content.split(/\s+/).length;
   const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 0);
   const avgSentenceLen = sentences.length ? wordCount / sentences.length : wordCount;
 
-  const readability = clamp(70 + Math.floor(wordCount / 4), 0, 98);
-  const grammar = clamp(94 + Math.floor(Math.random() * 6), 0, 100);
-  const clarity = clamp(100 - Math.floor(avgSentenceLen / 2), 60, 98);
+  const grammar = clamp(90 + Math.floor(Math.random() * 10), 0, 100);
+  const clarity = clamp(85 + Math.floor(Math.random() * 15), 0, 100);
+  const readability = clamp(100 - Math.floor(avgSentenceLen * 1.5), 40, 100);
   const tone = clamp(88 + Math.floor(Math.random() * 10), 0, 100);
 
   const issues = [];
@@ -238,6 +323,23 @@ async function runReviewAgent(draft) {
    overall score and plain-language reasoning.
 ========================================================= */
 async function runEngagementAgent(brief, review) {
+  try {
+    const response = await fetch('http://localhost:5000/predict_engagement', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brief, qualityScore: review.qualityScore })
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return {
+        ...data.prediction,
+        summary: `AI predicted engagement: ${data.prediction.overall}/100 (reach ${data.prediction.reach}, engagement ${data.prediction.engagement}, virality ${data.prediction.virality}).`
+      };
+    }
+  } catch (e) {
+    console.warn("Backend /predict_engagement failed", e);
+  }
+
   await wait(350);
   const base = 60 + Math.floor(review.qualityScore / 5);
   const reach = clamp(base + Math.floor(Math.random() * 15), 0, 99);
@@ -258,6 +360,23 @@ async function runEngagementAgent(brief, review) {
    the platform's best day itself, same as before.
 ========================================================= */
 async function runSchedulerAgent(brief, engagement, forcedDay) {
+  try {
+    const response = await fetch('http://localhost:5000/schedule_post', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brief, forcedDay })
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return {
+        ...data.schedule,
+        summary: `AI recommended send time: ${data.schedule.slot}. ${data.schedule.rationale}`
+      };
+    }
+  } catch (e) {
+    console.warn("Backend /schedule_post failed", e);
+  }
+
   await wait(250);
   const timeSlots = {
     LinkedIn: ["10:30 AM", "8:00 AM", "12:15 PM"],
@@ -302,7 +421,7 @@ async function runPipeline(brief, onStep) {
   onStep("writer", "done", writer.summary);
 
   onStep("image", "working");
-  const image = await runImageAgent(brief, research.recommended.topic);
+  const image = await runImageAgent(brief, research.recommended.topic, writer);
   onStep("image", "done", image.summary);
 
   onStep("hashtag", "working");
@@ -350,7 +469,7 @@ async function runCampaignPipeline(brief, onStep) {
   onStep("writer", "done", `Drafted ${days.length} days × 3 platform versions each (${days.length * 3} total posts).`);
 
   onStep("image", "working");
-  for (const d of days) d.image = await runImageAgent(brief, d.topic);
+  for (const d of days) d.image = await runImageAgent(brief, d.topic, d.writer);
   onStep("image", "done", `Generated ${days.length} image concepts, prompts, and visual styles.`);
 
   onStep("hashtag", "working");

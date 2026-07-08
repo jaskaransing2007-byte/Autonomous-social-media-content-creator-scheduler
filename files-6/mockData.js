@@ -113,42 +113,15 @@ const AGENT_DEFS = [
 ];
 
 // Seed data for dashboard stat cards
-const DASH_STATS = [
-  { label: "Total generated posts", value: 248, delta: "+18 this week", dir: "up" },
-  { label: "Scheduled posts", value: 34, delta: "+6 this week", dir: "up" },
-  { label: "Avg. engagement score", value: 79, delta: "+4 pts", dir: "up" },
-  { label: "Active agents", value: 8, delta: "All operational", dir: "up" },
-];
+const DASH_STATS = [];
 
-// Seed data for dashboard "agent activity" mini list — used as a fallback
-// until a real pipeline/campaign run produces a live activity log.
-const AGENT_ACTIVITY = [
-  { title: "Content Writer Agent", sub: "Finished 3 LinkedIn posts", pill: "pill-cyan", pillText: "Done" },
-  { title: "Trend Research Agent", sub: "Scanning niche: SaaS marketing", pill: "pill-purple", pillText: "Working" },
-  { title: "Scheduler Agent", sub: "Queued 2 posts for tomorrow", pill: "pill-green", pillText: "Done" },
-  { title: "Quality Review Agent", sub: "Flagged 1 tone mismatch", pill: "pill-amber", pillText: "Review" },
-];
+// Seed data for dashboard "agent activity" mini list
+const AGENT_ACTIVITY = [];
 
 // Seed data for upcoming content list
-const UPCOMING_CONTENT = [
-  { title: "\"3 signs your content strategy needs agents\"", sub: "LinkedIn · Tomorrow, 10:30 AM", pill: "pill-cyan", pillText: "Scheduled" },
-  { title: "\"Behind the scenes: our Q3 rebrand\"", sub: "Instagram · Thu, 6:00 PM", pill: "pill-cyan", pillText: "Scheduled" },
-  { title: "\"Hot take on AI in marketing\"", sub: "X/Twitter · Draft", pill: "pill-purple", pillText: "Draft" },
-];
+const UPCOMING_CONTENT = [];
 
 // Seed drafts for the calendar page (day offsets are relative to "today" at render time)
-const CALENDAR_SEED_DRAFTS = [
-  { id: "d1", title: "3 signs your strategy needs agents", platform: "LinkedIn", status: "draft" },
-  { id: "d2", title: "Behind the scenes: Q3 rebrand", platform: "Instagram", status: "draft" },
-  { id: "d3", title: "Hot take on AI in marketing", platform: "X/Twitter", status: "draft" },
-  { id: "d4", title: "Customer story: GreenCart", platform: "LinkedIn", status: "draft" },
-];
+const CALENDAR_SEED_DRAFTS = [];
 
-// Pre-placed events on the calendar, dayOffset is relative to the 1st of the displayed month
-const CALENDAR_SEED_EVENTS = [
-  { day: 4, title: "Founder AMA recap", platform: "LinkedIn", status: "scheduled" },
-  { day: 9, title: "Product teaser reel", platform: "Instagram", status: "scheduled" },
-  { day: 14, title: "Weekly tips thread", platform: "X/Twitter", status: "upcoming" },
-  { day: 18, title: "Customer spotlight", platform: "Instagram", status: "upcoming" },
-  { day: 22, title: "Industry trend recap", platform: "LinkedIn", status: "scheduled" },
-];
+const CALENDAR_SEED_EVENTS = [];
