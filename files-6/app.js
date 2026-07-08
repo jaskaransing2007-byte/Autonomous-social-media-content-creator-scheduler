@@ -391,10 +391,7 @@ function renderPipelineStatusList() {
   }).join("");
 }
 
-  const el = document.getElementById("weeklyPlanList");
-  if (!el) return;
-  el.style.display = 'none';
-}
+
 
 // Weekly content calendar preview — day + scheduled slot for the latest
 // campaign (the full Content Calendar page shows the actual month grid;
