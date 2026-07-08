@@ -391,20 +391,9 @@ function renderPipelineStatusList() {
   }).join("");
 }
 
-// Weekly content plan — from the Content Planning Agent (campaign only).
-function renderWeeklyPlanPanel() {
   const el = document.getElementById("weeklyPlanList");
   if (!el) return;
-  if (!lastCampaign) {
-    el.innerHTML = `<p style="font-size:.85rem;color:var(--text-dim);">Run an autonomous campaign to generate a 7-day content strategy.</p>`;
-    return;
-  }
-  el.innerHTML = lastCampaign.planner.week.map(w => `
-    <div class="mini-item">
-      <div><div class="mi-title">${w.day} — ${w.topic}</div><div class="mi-sub">${w.angle}</div></div>
-      <span class="pill pill-cyan">${w.relevance}%</span>
-    </div>
-  `).join("");
+  el.style.display = 'none';
 }
 
 // Weekly content calendar preview — day + scheduled slot for the latest
@@ -717,17 +706,6 @@ function renderCampaignTrendDetail(research) {
   `).join("");
 }
 
-function renderCampaignPlanDetail(planner) {
-  const el = document.getElementById("campaignPlanList");
-  if (!el) return;
-  el.innerHTML = planner.week.map(w => `
-    <div class="mini-item">
-      <div><div class="mi-title">${w.day} — ${w.topic}</div><div class="mi-sub">${w.angle}</div></div>
-      <span class="pill pill-cyan">${w.relevance}%</span>
-    </div>
-  `).join("");
-}
-
 function renderCampaignDays(days) {
   const el = document.getElementById("campaignDaysList");
   if (!el) return;
@@ -839,7 +817,7 @@ function bindRunCampaignButton() {
     });
 
     lastResearch = campaign.research;
-    lastCampaign = { research: campaign.research, planner: campaign.planner, days: campaign.days, generatedAt: Date.now() };
+    lastCampaign = { research: campaign.research, days: campaign.days, generatedAt: Date.now() };
     appStats.totalGenerated += campaign.days.length;
     appStats.totalScheduled += campaign.days.length;
     appStats.imagesGenerated += campaign.days.length;
@@ -853,7 +831,8 @@ function bindRunCampaignButton() {
     renderDrafts();
     renderDashboard();
     renderCampaignTrendDetail(campaign.research);
-    renderCampaignPlanDetail(campaign.planner);
+    // Content Planning agent is removed, no longer rendering plan detail
+    // renderCampaignPlanDetail();
     renderCampaignDays(campaign.days);
     document.getElementById("campaignSection")?.classList.remove("hidden");
 
@@ -1081,7 +1060,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // a previous session (persisted via localStorage).
   if (lastCampaign) {
     renderCampaignTrendDetail(lastCampaign.research);
-    renderCampaignPlanDetail(lastCampaign.planner);
+    // Content Planning agent is removed, no longer rendering plan detail
+    // renderCampaignPlanDetail();
     renderCampaignDays(lastCampaign.days);
     document.getElementById("campaignSection")?.classList.remove("hidden");
   }

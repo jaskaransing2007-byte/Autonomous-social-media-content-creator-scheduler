@@ -69,46 +69,7 @@ async function runResearchAgent(brief) {
   return { topics, recommended, summary: `Identified trending topic: "${recommended.topic}" (${recommended.relevance}% relevance).` };
 }
 
-/* =========================================================
-   AGENT 2 — Content Planning Agent
-   Builds a full 7-day content strategy: one topic + one
-   content "angle" per day of the week, drawing on the Trend
-   Research Agent's top 5 topics so planning is genuinely
-   informed by research rather than invented independently.
-========================================================= */
-async function runPlannerAgent(brief, research) {
-  try {
-    const response = await fetch('http://localhost:5000/plan_campaign', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ brief, topics: research.topics.map(t => t.topic) })
-    });
-    if (response.ok) {
-      const data = await response.json();
-      return {
-        week: data.week,
-        summary: `Built a 7-day content strategy across ${new Set(data.week.map(w => w.topic)).size} distinct topics using AI, opening Monday with "${data.week[0].topic}".`,
-      };
-    }
-  } catch (e) {
-    console.warn("Backend /plan_campaign failed", e);
-  }
-  
-  const pool = research.topics.length ? research.topics : TRENDING_TOPICS;
-  const week = WEEKLY_DAYS.map((day, i) => {
-    const t = pool[i % pool.length];
-    return {
-      day,
-      topic: t.topic || t.title, // Handle both object formats
-      relevance: t.relevance,
-      angle: WEEKLY_ANGLES[i % WEEKLY_ANGLES.length],
-    };
-  });
-  return {
-    week,
-    summary: `Built a 7-day content strategy across ${new Set(week.map(w => w.topic)).size} distinct topics, opening Monday with "${week[0].topic}" (${week[0].angle}).`,
-  };
-}
+
 
 /* =========================================================
    AGENT 3 — Content Writer Agent
@@ -458,11 +419,16 @@ async function runCampaignPipeline(brief, onStep) {
   const research = await runResearchAgent(brief);
   onStep("research", "done", research.summary);
 
-  onStep("planner", "working");
-  const planner = await runPlannerAgent(brief, research);
-  onStep("planner", "done", planner.summary);
-
-  const days = planner.week.map(d => ({ dayName: d.day, topic: d.topic, angle: d.angle, relevance: d.relevance }));
+  const pool = research.topics.length ? research.topics : [{ topic: "General Updates", relevance: 80 }];
+  const days = WEEKLY_DAYS.map((day, i) => {
+    const t = pool[i % pool.length];
+    return {
+      dayName: day,
+      topic: t.topic || t.title,
+      angle: "General discussion",
+      relevance: t.relevance
+    };
+  });
 
   onStep("writer", "working");
   for (const d of days) d.writer = await runWriterAgent(brief, d.topic, d.angle);
@@ -488,5 +454,5 @@ async function runCampaignPipeline(brief, onStep) {
   for (const d of days) d.scheduler = await runSchedulerAgent(brief, d.engagement, d.dayName);
   onStep("scheduler", "done", `Scheduled all ${days.length} posts across the week.`);
 
-  return { research, planner, days };
+  return { research, days };
 }

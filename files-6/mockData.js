@@ -103,7 +103,6 @@ const TESTIMONIALS = [
 // this array, so extending it here automatically extends those views too.
 const AGENT_DEFS = [
   { id: "research", name: "Trend Research Agent", icon: "📡", desc: "Discovers trending topics, scores niche relevance, and recommends the strongest content opportunity." },
-  { id: "planner", name: "Content Planning Agent", icon: "🧭", desc: "Builds a full 7-day content strategy, assigning a topic and angle to every day of the week." },
   { id: "writer", name: "Content Writer Agent", icon: "✍️", desc: "Drafts a LinkedIn post, Instagram caption, and X/Twitter post for every planned topic." },
   { id: "image", name: "Image Generation Agent", icon: "🖼️", desc: "Creates an image concept, AI image prompt, and visual style direction for every post." },
   { id: "hashtag", name: "Hashtag Agent", icon: "#️⃣", desc: "Selects 15+ trending, niche, and high-engagement hashtags per post." },
